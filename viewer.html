@@ -2,68 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PLY Viewer</title>
+  <title>PLY Viewer (jsDelivr)</title>
   <style>
     body { margin: 0; overflow: hidden; }
     canvas { display: block; }
+    #error {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      padding: 1rem;
+      background: #f8d7da;
+      color: #721c24;
+      font-family: sans-serif;
+    }
   </style>
 </head>
 <body>
-  <!-- Three.js via CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- Our module script -->
   <script type="module">
-    // Import PLYLoader from the Three.js examples
-    import { PLYLoader } from 'https://unpkg.com/three@0.128.0/examples/jsm/loaders/PLYLoader.js';
+    // =========================
+    // 1) Import from jsDelivr
+    // =========================
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js';
+    import { PLYLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/PLYLoader.js';
 
-    // Get the IPFS URL from the query string parameter named "ipfs"
+    // 2) Grab the 'ipfs' query param
     const params = new URLSearchParams(window.location.search);
     const ipfsUrl = params.get('ipfs');
+
+    // 3) If missing URL, show error
     if (!ipfsUrl) {
-      document.body.innerHTML = "Error: No IPFS URL provided. Please add '?ipfs=YOUR_IPFS_URL' to the URL.";
-      throw new Error("IPFS URL not provided.");
+      const errorDiv = document.createElement('div');
+      errorDiv.id = "error";
+      errorDiv.innerText = "Error: No IPFS URL provided. Add '?ipfs=...' to the URL.";
+      document.body.appendChild(errorDiv);
+      throw new Error("No IPFS URL provided in the query parameter.");
     }
 
-    // Set up the Three.js scene
+    // 4) Basic Scene Setup
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(75, 
+      window.innerWidth / window.innerHeight, 
+      0.1, 
+      1000
+    );
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Add some basic lighting
-    const ambientLight = new THREE.AmbientLight(0x404040);
+    // 5) Lights
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
 
-    // Load the PLY file from the provided IPFS URL
+    // 6) Load the PLY via ipfsUrl
     const loader = new PLYLoader();
-    loader.load(ipfsUrl, function (geometry) {
-      geometry.computeVertexNormals();
-      const material = new THREE.MeshStandardMaterial({ color: 0x0055ff });
-      const mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
+    loader.load(
+      ipfsUrl,
+      function (geometry) {
+        geometry.computeVertexNormals();
+        const material = new THREE.MeshStandardMaterial({ color: 0x0055ff });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
 
-      // Center the camera based on the object's bounding box
-      geometry.computeBoundingBox();
-      const bbox = geometry.boundingBox;
-      const center = bbox.getCenter(new THREE.Vector3());
-      camera.position.set(center.x, center.y, bbox.max.z * 2);
-      camera.lookAt(center);
-    }, undefined, function (error) {
-      console.error('An error occurred while loading the PLY file:', error);
-    });
+        // Center camera on model
+        geometry.computeBoundingBox();
+        const bbox = geometry.boundingBox;
+        const center = bbox.getCenter(new THREE.Vector3());
+        camera.position.set(center.x, center.y, bbox.max.z * 3);
+        camera.lookAt(center);
+      },
+      undefined,
+      function (error) {
+        console.error("Error loading PLY:", error);
+        const errorDiv = document.createElement('div');
+        errorDiv.id = "error";
+        errorDiv.innerText = "Error loading PLY file. Check console.";
+        document.body.appendChild(errorDiv);
+      }
+    );
 
-    // Adjust scene on window resize
+    // 7) On window resize
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Render loop
+    // 8) Animate
     function animate() {
       requestAnimationFrame(animate);
       renderer.render(scene, camera);
