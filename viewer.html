@@ -1,65 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>PLY Viewer</title>
-    <style>
-      body { margin: 0; background: #000; }
-      canvas { display: block; }
-    </style>
-  </head>
-  <body>
-    <!-- three.js core -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<head>
+  <meta charset="UTF-8" />
+  <title>PLY Viewer</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <!-- Three.js via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Our module script -->
+  <script type="module">
+    // Import PLYLoader from the Three.js examples
+    import { PLYLoader } from 'https://unpkg.com/three@0.128.0/examples/jsm/loaders/PLYLoader.js';
 
-    <!-- Loaders + Controls -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/PLYLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    // Get the IPFS URL from the query string parameter named "ipfs"
+    const params = new URLSearchParams(window.location.search);
+    const ipfsUrl = params.get('ipfs');
+    if (!ipfsUrl) {
+      document.body.innerHTML = "Error: No IPFS URL provided. Please add '?ipfs=YOUR_IPFS_URL' to the URL.";
+      throw new Error("IPFS URL not provided.");
+    }
 
-    <script>
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Set up the Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Add some basic lighting
+    const ambientLight = new THREE.AmbientLight(0x404040);
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
+
+    // Load the PLY file from the provided IPFS URL
+    const loader = new PLYLoader();
+    loader.load(ipfsUrl, function (geometry) {
+      geometry.computeVertexNormals();
+      const material = new THREE.MeshStandardMaterial({ color: 0x0055ff });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+
+      // Center the camera based on the object's bounding box
+      geometry.computeBoundingBox();
+      const bbox = geometry.boundingBox;
+      const center = bbox.getCenter(new THREE.Vector3());
+      camera.position.set(center.x, center.y, bbox.max.z * 2);
+      camera.lookAt(center);
+    }, undefined, function (error) {
+      console.error('An error occurred while loading the PLY file:', error);
+    });
+
+    // Adjust scene on window resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+    });
 
-      const controls = new THREE.OrbitControls(camera, renderer.domElement); // ✅ now works
-
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-      scene.add(ambientLight);
-
-      const pointLight = new THREE.PointLight(0xffffff, 1);
-      pointLight.position.set(10, 10, 10);
-      scene.add(pointLight);
-
-      const loader = new THREE.PLYLoader();
-      loader.load(
-        // Replace with your actual file URL
-        'https://gateway.pinata.cloud/ipfs/bafybeigfx42sqqv4ie6yvdcwnsyddczk3qg3ojbr7yzsduycgdmxj6a',
-        function (geometry) {
-          geometry.computeVertexNormals();
-          const material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
-          const mesh = new THREE.Mesh(geometry, material);
-          scene.add(mesh);
-        },
-        (xhr) => console.log((xhr.loaded / xhr.total * 100) + '% loaded'),
-        (error) => console.error('An error happened:', error)
-      );
-
-      camera.position.z = 2;
-
-      function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-      }
-      animate();
-
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    </script>
-  </body>
+    // Render loop
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
 </html>
