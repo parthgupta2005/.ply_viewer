@@ -1,51 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>3D PLY Viewer</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
-  </style>
-</head>
-<body>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/PLYLoader.js"></script>
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const modelURL = params.get('model');
+  <head>
+    <meta charset="UTF-8" />
+    <title>3D PLY Viewer</title>
+    <style>
+      body { margin: 0; overflow: hidden; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+      import { PLYLoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/PLYLoader.js';
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+      const params = new URLSearchParams(window.location.search);
+      const modelURL = params.get('model');
 
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(0, 1, 1).normalize();
-    scene.add(light);
-
-    const loader = new THREE.PLYLoader();
-    loader.load(modelURL, function (geometry) {
-      geometry.computeVertexNormals();
-      const material = new THREE.MeshStandardMaterial({ color: 0x999999 });
-      const mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
-      camera.position.z = 1.5;
-      animate();
-    });
-
-    function animate() {
-      requestAnimationFrame(animate);
-      scene.rotation.y += 0.005;
-      renderer.render(scene, camera);
-    }
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-  </script>
-</body>
+      document.body.appendChild(renderer.domElement);
+
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(0, 1, 1).normalize();
+      scene.add(light);
+
+      const loader = new PLYLoader();
+      loader.load(modelURL, function (geometry) {
+        geometry.computeVertexNormals();
+        const material = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+        camera.position.z = 2;
+        animate();
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        scene.rotation.y += 0.005;
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
 </html>
