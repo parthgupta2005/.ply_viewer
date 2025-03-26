@@ -9,20 +9,21 @@
     </style>
   </head>
   <body>
+    <!-- three.js core -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+    <!-- Loaders + Controls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/PLYLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-    <script>
-      // Manually bind OrbitControls to the THREE namespace
-      THREE.OrbitControls = window.OrbitControls;
 
+    <script>
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      const controls = new THREE.OrbitControls(camera, renderer.domElement); // ✅ now works
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
       scene.add(ambientLight);
@@ -33,6 +34,7 @@
 
       const loader = new THREE.PLYLoader();
       loader.load(
+        // Replace with your actual file URL
         'https://gateway.pinata.cloud/ipfs/bafybeigfx42sqqv4ie6yvdcwnsyddczk3qg3ojbr7yzsduycgdmxj6a',
         function (geometry) {
           geometry.computeVertexNormals();
